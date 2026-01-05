@@ -1,0 +1,8 @@
+# Base image: webMethods Integration Server
+FROM softwareag/webmethods-integration-server:latest
+
+# Copy your IS package into the container
+COPY ./employee /opt/softwareag/IntegrationServer/packages/employee
+
+# Expose the default IS HTTP port
+EXPOSE 5555
