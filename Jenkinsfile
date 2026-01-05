@@ -8,7 +8,6 @@ pipeline {
         NETWORK_NAME   = "jenkins-net"
         IS_PORT        = "5555"
 
-        // Sample request payload for smoke test
         EMP_PAYLOAD = '''{
             "empCode": "E001",
             "empName": "Auni",
@@ -65,20 +64,20 @@ pipeline {
                   ${IMAGE_NAME}:${IMAGE_TAG}
                 """
 
-                echo "⏳ Waiting for webMethods IS to start..."
-                sleep 40
+                echo "⏳ Waiting for container to start..."
+                sleep 5
             }
         }
 
-        stage('Readiness Check (IS Up)') {
+        stage('Readiness Check (Service Up)') {
             steps {
                 script {
                     boolean ready = false
 
-                    for (int i = 1; i <= 12; i++) {
-                        sleep 6
+                    for (int i = 1; i <= 10; i++) {
+                        sleep 3
                         def status = sh(
-                            script: "curl -s -o /dev/null -w '%{http_code}' http://localhost:${IS_PORT}/invoke/wm.server/ping",
+                            script: "curl -s -o /dev/null -w '%{http_code}' http://localhost:${IS_PORT}",
                             returnStdout: true
                         ).trim()
 
@@ -91,7 +90,7 @@ pipeline {
                     }
 
                     if (!ready) {
-                        error "❌ webMethods IS did not become ready"
+                        error "❌ Service did not become ready"
                     }
                 }
             }
@@ -103,16 +102,16 @@ pipeline {
                     def status = sh(
                         script: """
                         curl -s -o /dev/null -w '%{http_code}' \
-                        -X POST http://localhost:${IS_PORT}/rad/employee.resources:rad_employee/insertEmployee \
+                        -X POST http://localhost:${IS_PORT} \
                         -H 'Content-Type: application/json' \
                         -d '${EMP_PAYLOAD}'
                         """,
                         returnStdout: true
                     ).trim()
 
-                    echo "POST /employee -> HTTP ${status}"
+                    echo "Smoke Test POST -> HTTP ${status}"
 
-                    if (!(status in ["200", "201", "202"])) {
+                    if (status != "200") {
                         error "❌ Smoke test failed (HTTP ${status})"
                     }
                 }

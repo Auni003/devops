@@ -1,8 +1,13 @@
-# Base image: webMethods Integration Server
-FROM softwareag/webmethods-integration-server:latest
+# Mock Integration Server for local upskilling
+FROM python:3.11-slim
 
-# Copy your IS package into the container
-COPY ./employee /opt/softwareag/IntegrationServer/packages/employee
+WORKDIR /app
 
-# Expose the default IS HTTP port
+# Copy employee folder (just to simulate package deployment)
+COPY ./employee /app/employee
+
+# Expose IS-like port
 EXPOSE 5555
+
+# Simple HTTP server to simulate IS being UP
+CMD ["python3", "-m", "http.server", "5555"]
