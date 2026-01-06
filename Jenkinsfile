@@ -6,7 +6,7 @@ pipeline {
         IMAGE_TAG      = "v1"
         CONTAINER_NAME = "wm-employee-api"
         NETWORK_NAME   = "jenkins-net"
-        IS_PORT        = "5555"
+        IS_PORT        = "5556"   // Host port (change if needed to avoid conflicts)
 
         EMP_PAYLOAD = '''{
             "empCode": "E001",
@@ -29,6 +29,15 @@ pipeline {
             }
         }
 
+        stage('Pre-clean Existing Container') {
+            steps {
+                echo "🧹 Removing any existing container with the same name..."
+                sh """
+                docker rm -f ${CONTAINER_NAME} >/dev/null 2>&1 || true
+                """
+            }
+        }
+
         stage('Ensure Docker Network') {
             steps {
                 sh """
@@ -45,17 +54,9 @@ pipeline {
             }
         }
 
-        stage('Stop & Remove Existing Container') {
-            steps {
-                sh """
-                docker stop ${CONTAINER_NAME} >/dev/null 2>&1 || true
-                docker rm   ${CONTAINER_NAME} >/dev/null 2>&1 || true
-                """
-            }
-        }
-
         stage('Run API Container') {
             steps {
+                echo "🚀 Starting container..."
                 sh """
                 docker run -d \
                   --name ${CONTAINER_NAME} \
@@ -63,8 +64,7 @@ pipeline {
                   -p ${IS_PORT}:5555 \
                   ${IMAGE_NAME}:${IMAGE_TAG}
                 """
-
-                echo "⏳ Waiting for container to start..."
+                echo "⏳ Waiting a few seconds for the container to start..."
                 sleep 5
             }
         }
@@ -127,6 +127,7 @@ pipeline {
             echo "❌ Pipeline failed"
         }
         always {
+            echo "📦 Current running containers:"
             sh "docker ps | grep ${CONTAINER_NAME} || true"
         }
     }
